@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SALESTORM | High-Scale E-Commerce & Flash Sale Engine (SysCrafters 2026)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Background Glow & Grid -->
+  <div class="bg-mesh"></div>
+  <div class="bg-grid"></div>
+
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div class="brand-text">
+          <h1>SALESTORM <span class="badge-edition">MEGASTORE</span></h1>
+          <p class="subtitle">High-Scale E-Commerce Engine // 10,000 Shoppers vs 1,000 Catalog Products</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" id="tabBtnCatalog" onclick="switchView('catalog')">
+          <span>🛍️ Storefront Catalog</span>
+        </button>
+        <button class="tab-btn" id="tabBtnCart" onclick="switchView('cart')">
+          <span>🛒 Shopping Cart (<strong id="tabCartCount">0</strong>)</span>
+        </button>
+        <button class="tab-btn" id="tabBtnFlashSale" onclick="switchView('flashSale')">
+          <span>⚡ Flash Sale Arena</span>
+        </button>
+        <button class="tab-btn" id="tabBtnCockpit" onclick="switchView('cockpit')">
+          <span>📊 System Cockpit</span>
+        </button>
+      </nav>
+
+      <div class="nav-status">
+        <button class="cart-nav-btn" onclick="switchView('cart')">
+          <span>🛒 Cart</span>
+          <span class="cart-count-pill" id="navCartCount">0</span>
+        </button>
+        <div class="invariant-badge" id="invariantBadge">
+          <span class="icon">🔒</span>
+          <span class="text">ZERO OVERSELL INVARIANT: <strong>STRICT 0 OVER</strong></span>
+        </div>
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span id="wsStatus">LIVE WEBSOCKET</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: E-COMMERCE STOREFRONT CATALOG (1,000 Products & 10,000 Customers) -->
+    <!-- ========================================================================= -->
+    <section class="view-section active" id="viewCatalog">
+      <!-- Storefront Hero Banner -->
+      <div class="storefront-banner">
+        <div class="banner-content">
+          <h2>⚡ High-Scale E-Commerce Storefront</h2>
+          <p>
+            Experience a full-scale e-commerce marketplace powered by <strong>Distributed Shard-Per-Product Concurrency</strong>.
+            Over 1,000 products with independent Redis stock counters. 10,000 customers can purchase simultaneously without database deadlocks.
+          </p>
+        </div>
+        <div class="banner-stats">
+          <div class="banner-stat-box">
+            <div class="val" id="bannerTotalProducts">1,000</div>
+            <div class="lbl">Catalog Products</div>
+          </div>
+          <div class="banner-stat-box">
+            <div class="val" id="bannerTotalStock">110,000+</div>
+            <div class="lbl">Total Units Pool</div>
+          </div>
+          <div class="banner-stat-box">
+            <div class="val" id="bannerCategoriesCount">8</div>
+            <div class="lbl">Category Shards</div>
+          </div>
+          <div class="banner-stat-box">
+            <div class="val text-emerald">0</div>
+            <div class="lbl">Oversold Units</div>
+          </div>
+        </div>
+        <button class="banner-action-btn" id="btnStoreBurst" onclick="runMultiProductSimulation()">
+          <span>⚡ Simulate 10,000 Customers Traffic</span>
+          <span class="spinner" id="spinStoreBurst"></span>
+        </button>
+      </div>
+
+      <!-- Store Toolbar: Search & Category Pills -->
+      <div class="store-toolbar">
+        <div class="toolbar-top">
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="catalogSearchInput" placeholder="Search 1,000 products by name or SKU..." oninput="debounceSearch()">
+          </div>
+          <div class="toolbar-filters">
+            <select class="select-filter" id="sortFilter" onchange="handleSortChange()">
+              <option value="default">Sort: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="stock-asc">Stock: Lowest First</option>
+              <option value="stock-desc">Stock: Highest First</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="category-pills" id="categoryPills">
+          <button class="cat-pill active" onclick="filterCategory('All')">All Products (1,000)</button>
+          <button class="cat-pill" onclick="filterCategory('Audio')">🎧 Audio</button>
+          <button class="cat-pill" onclick="filterCategory('Gaming')">🎮 Gaming</button>
+          <button class="cat-pill" onclick="filterCategory('Peripherals')">⌨️ Peripherals</button>
+          <button class="cat-pill" onclick="filterCategory('Electronics')">🖥️ Electronics</button>
+          <button class="cat-pill" onclick="filterCategory('Laptops')">💻 Laptops</button>
+          <button class="cat-pill" onclick="filterCategory('Smartphones')">📱 Smartphones</button>
+          <button class="cat-pill" onclick="filterCategory('Wearables')">⌚ Wearables</button>
+          <button class="cat-pill" onclick="filterCategory('Cameras')">📷 Cameras</button>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid" id="catalogProductsGrid">
+        <div class="loading-catalog" style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-muted);">
+          <div class="spinner" style="display: inline-block; width: 28px; height: 28px; margin-bottom: 12px;"></div>
+          <p>Loading 1,000 Sharded Products from PostgreSQL & Redis...</p>
+        </div>
+      </div>
+
+      <!-- Pagination Bar -->
+      <div class="pagination-bar">
+        <button class="page-btn" id="btnPrevPage" onclick="changePage(-1)" disabled>&larr; Previous Page</button>
+        <span class="page-info" id="pageInfoText">Showing Page 1 of 21 (1,000 Products)</span>
+        <button class="page-btn" id="btnNextPage" onclick="changePage(1)">Next Page &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: DEDICATED SHOPPING CART PAGE                                      -->
+    <!-- ========================================================================= -->
+    <section class="view-section" id="viewCart">
+      <div class="cart-page-container">
+        <!-- Main Cart Column -->
+        <div class="cart-page-main">
+          <div class="cart-page-header-row">
+            <h2><span>🛒</span> Shopping Cart (<span id="cartPageHeaderCount">0</span> Items)</h2>
+            <button class="btn-clear-cart" onclick="clearFullCart()">Clear Cart</button>
+          </div>
+
+          <!-- Items list container -->
+          <div class="cart-page-items-list" id="cartPageItemsList">
+            <!-- Dynamically populated by renderCart() -->
+          </div>
+
+          <!-- Empty State (Shown when cart is 0) -->
+          <div class="cart-empty-page" id="cartPageEmptyState" style="display: none;">
+            <div class="empty-icon">🛍️</div>
+            <h3>Your Shopping Cart is Empty</h3>
+            <p>You haven't added any products yet. Browse through our 1,000 catalog products and add items to your cart.</p>
+            <button class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;" onclick="switchView('catalog')">
+              🛍️ Explore 1,000 Products Catalog &rarr;
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary & Checkout Sidebar -->
+        <div class="cart-page-summary">
+          <h3><span>📋</span> Order Summary</h3>
+
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span>Items Subtotal:</span>
+              <span id="cartPageSubtotal" style="font-family: var(--font-mono); color: var(--text-main); font-weight: 700;">$0.00</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping & Delivery:</span>
+              <span style="color: var(--emerald); font-weight: 700;">FREE (1-Day Express)</span>
+            </div>
+            <div class="summary-row">
+              <span>Estimated Sales Tax:</span>
+              <span style="font-family: var(--font-mono);">$0.00</span>
+            </div>
+            <div class="summary-row total">
+              <span>Estimated Total:</span>
+              <span class="val" id="cartPageTotal">$0.00</span>
+            </div>
+          </div>
+
+          <div class="summary-guarantee-box">
+            <span>🔒</span>
+            <div>
+              <strong>Atomic Multi-Item Hold:</strong>
+              <div>All items in your cart are verified and held simultaneously with zero oversell guarantee.</div>
+            </div>
+          </div>
+
+          <button class="btn-proceed-checkout" id="btnCartPageCheckout" onclick="checkoutCurrentCart()" disabled>
+            <span>⚡ Proceed to Checkout</span>
+            <span class="spinner" id="spinCartPageCheckout"></span>
+          </button>
+
+          <button class="btn-continue-shopping" onclick="switchView('catalog')">
+            &larr; Continue Shopping
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: FLASH SALE SPOTLIGHT ARENA (10k Users vs 100 Stock Flash Sale)    -->
+    <!-- ========================================================================= -->
+    <section class="view-section" id="viewFlashSale">
+      <main class="dashboard-grid">
+        <!-- Stock Meter & Overview -->
+        <section class="card metrics-overview">
+          <div class="card-header">
+            <h2><span class="icon">📊</span> Flash Sale Real-Time Stock</h2>
+            <span class="live-pill">STREAMING</span>
+          </div>
+
+          <div class="stock-meter-container">
+            <div class="stock-meter-header">
+              <span class="label">EXCLUSIVE FLASH INVENTORY</span>
+              <span class="stock-numeric"><span id="stockRemaining">100</span> <small>/ 100 Units</small></span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-bar" id="stockBar" style="width: 100%;"></div>
+            </div>
+            <div class="stock-meter-footer">
+              <span class="tag" id="stockStatusTag">READY FOR SALE</span>
+              <span class="tag-detail" id="stockReservedTag">0 Units Held in Active TTL</span>
+            </div>
+          </div>
+
+          <div class="counters-grid">
+            <div class="counter-box">
+              <div class="counter-label">TOTAL REQUESTS</div>
+              <div class="counter-value" id="valTotalRequests">0</div>
+              <div class="counter-sub" id="valRps">0 req/sec</div>
+            </div>
+            <div class="counter-box success-accent">
+              <div class="counter-label">PAID ORDERS</div>
+              <div class="counter-value text-emerald" id="valPaidOrders">0</div>
+              <div class="counter-sub">Committed in DB</div>
+            </div>
+            <div class="counter-box warning-accent">
+              <div class="counter-label">ACTIVE HOLDS</div>
+              <div class="counter-value text-amber" id="valActiveHolds">0</div>
+              <div class="counter-sub">TTL Locks (5 min)</div>
+            </div>
+            <div class="counter-box danger-accent">
+              <div class="counter-label">SOLD-OUT REJECTIONS</div>
+              <div class="counter-value text-rose" id="valSoldOut">0</div>
+              <div class="counter-sub">HTTP 409 Fast-Fail (&lt;5ms)</div>
+            </div>
+            <div class="counter-box info-accent">
+              <div class="counter-label">RESTOCKED UNITS</div>
+              <div class="counter-value text-cyan" id="valRestocked">0</div>
+              <div class="counter-sub">Failed / Expired Recoveries</div>
+            </div>
+            <div class="counter-box invariant-box">
+              <div class="counter-label">OVER-ALLOCATIONS</div>
+              <div class="counter-value text-emerald" id="valOversold">0</div>
+              <div class="counter-sub" id="valOversoldStatus">✓ STRICT 0 INVARIANT</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Interactive Single-User Sandbox -->
+        <section class="card customer-journey">
+          <div class="card-header">
+            <h2><span class="icon">🛍️</span> Customer Interactive Sandbox</h2>
+            <span class="client-pill">SINGLE-USER TEST</span>
+          </div>
+
+          <div class="product-showcase">
+            <div class="product-badge">EXCLUSIVE FLASH SALE</div>
+            <div class="product-details">
+              <h3 class="product-title">Quantum Pro Spatial ANC Headset</h3>
+              <p class="product-desc">SysCrafters 2026 Limited Edition — Studio grade planar magnetic drivers with ultra-low latency.</p>
+              <div class="price-row">
+                <span class="current-price">$299.99</span>
+                <span class="original-price">$499.99</span>
+                <span class="discount-badge">40% OFF</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-card" id="stepReserveCard">
+            <div class="step-header">
+              <span class="step-num">1</span>
+              <h4>Atomic Hold Reservation</h4>
+            </div>
+            <div class="step-body">
+              <div class="input-group">
+                <label>Simulated Customer ID</label>
+                <input type="text" id="custUserId" value="shopper_alex_01" placeholder="e.g. user_123">
+              </div>
+              <button class="btn btn-reserve" id="btnReserveSingle" onclick="reserveSingleItem()">
+                ⚡ Claim / Reserve 1 Unit
+              </button>
+            </div>
+          </div>
+
+          <div class="step-card disabled" id="stepPayCard">
+            <div class="step-header">
+              <span class="step-num">2</span>
+              <h4>Payment & State Transition</h4>
+            </div>
+            <div class="step-body">
+              <div class="token-display">
+                <span class="token-label">Reservation Token:</span>
+                <code id="displayToken">None</code>
+                <span class="countdown" id="tokenCountdown">TTL: 300s</span>
+              </div>
+
+              <div class="payment-buttons">
+                <button class="btn btn-success" onclick="paySingleOrder('SUCCESS')">
+                  ✓ Simulate Successful Payment
+                </button>
+                <button class="btn btn-danger" onclick="paySingleOrder('DECLINE')">
+                  ✕ Simulate Card Decline (Restock)
+                </button>
+                <button class="btn btn-warning" onclick="paySingleOrder('TIMEOUT')">
+                  ⏱️ Simulate Gateway Timeout
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: SYSTEM COCKPIT & ARCHITECTURE BENCHMARK SUITE                     -->
+    <!-- ========================================================================= -->
+    <section class="view-section" id="viewCockpit">
+      <main class="dashboard-grid">
+        <!-- Cockpit Benchmarks Panel -->
+        <section class="card simulation-cockpit">
+          <div class="card-header">
+            <h2><span class="icon">🚀</span> High-Scale Concurrency & Chaos Suite</h2>
+            <span class="hackathon-tag">SYS CRAFTERS 2026 EVALUATION</span>
+          </div>
+
+          <p class="description">
+            Stress-test the dual-layer architecture (PostgreSQL 18 + Redis In-Memory Locks). Observe zero race conditions, sub-millisecond fast-fail rejection, and automated failure recovery.
+          </p>
+
+          <div class="actions-grid">
+            <!-- Scenario 1: 10k Burst -->
+            <div class="action-card">
+              <div class="action-icon">⚡</div>
+              <div class="action-info">
+                <h3>Scenario 1: 10,000 Users Concurrency Burst</h3>
+                <p>10,000 concurrent distinct buyers targeting 100 stock. Asserts exactly 100 reservations and 9,900 instant 409 rejections.</p>
+              </div>
+              <button class="btn btn-primary" id="btnRun10k" onclick="run10kBurst()">
+                <span class="btn-text">Execute 10k Burst</span>
+                <span class="spinner" id="spin10k"></span>
+              </button>
+            </div>
+
+            <!-- Scenario 2: Full Lifecycle -->
+            <div class="action-card">
+              <div class="action-icon">🔄</div>
+              <div class="action-info">
+                <h3>Scenario 2: Payment Failures & Timeout Recovery</h3>
+                <p>Simulates 60 paid orders + 20 card declines + 20 cart abandonments (TTL sweep). Restocks 40 units for Wave 2 buyers.</p>
+              </div>
+              <button class="btn btn-secondary" id="btnRunLifecycle" onclick="runLifecycleSimulation()">
+                <span class="btn-text">Execute Full Lifecycle</span>
+                <span class="spinner" id="spinLifecycle"></span>
+              </button>
+            </div>
+
+            <!-- Scenario 3: Idempotency Attack -->
+            <div class="action-card">
+              <div class="action-icon">🛡️</div>
+              <div class="action-info">
+                <h3>Scenario 3: Idempotency & Replay Attack</h3>
+                <p>Fires 500 rapid duplicate submissions with the same key and user ID. Asserts exactly 1 unit reserved in database.</p>
+              </div>
+              <button class="btn btn-accent" id="btnRunIdempotency" onclick="runIdempotencyTest()">
+                <span class="btn-text">Test Replay Attack</span>
+                <span class="spinner" id="spinIdempotency"></span>
+              </button>
+            </div>
+
+            <!-- Scenario 4: 10,000 Customers vs 1,000 Products -->
+            <div class="action-card">
+              <div class="action-icon">🌐</div>
+              <div class="action-info">
+                <h3>Scenario 4: 10,000 Customers vs 1,000 Products</h3>
+                <p>10,000 customers sharded across 1,000 catalog products with isolated Redis stock counters and atomic rollback.</p>
+              </div>
+              <button class="btn btn-primary" id="btnRunMultiProduct" onclick="runMultiProductSimulation()">
+                <span class="btn-text">Execute 10k vs 1k Shard</span>
+                <span class="spinner" id="spinMultiProduct"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="system-controls">
+            <button class="btn btn-outline" onclick="resetSale()">
+              <span>🔄 Reset Flash Sale (100 Stock)</span>
+            </button>
+            <button class="btn btn-outline" onclick="triggerAuditCheck()">
+              <span>🔍 Run Invariant Verification Audit</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Live Architecture Audit Stream -->
+        <section class="card audit-log-card">
+          <div class="card-header">
+            <h2><span class="icon">📜</span> Live Architecture Audit Stream</h2>
+            <button class="btn-clear" onclick="clearLogs()">Clear Console</button>
+          </div>
+          <div class="terminal-container" id="terminalLogs">
+            <div class="log-line info">
+              <span class="log-time">[SYSTEM]</span> SALESTORM Engine Initialized. Redis Lua Atomic scripts ready. PostgreSQL Schema verified.
+            </div>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SLIDE-OUT SHOPPING CART DRAWER                                             -->
+  <!-- ========================================================================= -->
+  <div class="cart-overlay" id="cartOverlay" onclick="closeCartOnBackdrop(event)">
+    <div class="cart-drawer" onclick="event.stopPropagation()">
+      <div class="cart-header">
+        <h3><span>🛒</span> Your Shopping Cart (<span id="cartDrawerCount">0</span>)</h3>
+        <button class="cart-close-btn" onclick="toggleCartDrawer()">✕</button>
+      </div>
+
+      <div class="cart-items-list" id="cartItemsList">
+        <div class="cart-empty-state">
+          <div class="icon">🛍️</div>
+          <p>Your cart is empty.</p>
+          <small>Browse the 1,000 catalog products and click "Add to Cart".</small>
+        </div>
+      </div>
+
+      <div class="cart-footer">
+        <div class="cart-totals">
+          <div class="cart-total-row">
+            <span>Items Subtotal:</span>
+            <span id="cartSubtotal">$0.00</span>
+          </div>
+          <div class="cart-total-row">
+            <span>Express Shipping:</span>
+            <span style="color: var(--emerald);">FREE (Hackathon Special)</span>
+          </div>
+          <div class="cart-total-row final">
+            <span>Estimated Total:</span>
+            <span id="cartTotal" style="color: var(--emerald);">$0.00</span>
+          </div>
+        </div>
+
+        <button class="btn-checkout-atomic" id="btnCheckoutCart" onclick="checkoutCurrentCart()" disabled>
+          ⚡ Atomic Multi-Item Checkout (Hold Stock)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Backdrop -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeOrderModal()"></div>
+
+  <!-- ========================================================================= -->
+  <!-- PROFESSIONAL E-COMMERCE CHECKOUT & ORDER CONFIRMATION MODAL               -->
+  <!-- ========================================================================= -->
+  <div class="order-modal" id="orderModal">
+    <!-- Step 1: Checkout Form View -->
+    <div id="checkoutFormView">
+      <div class="checkout-modal-header">
+        <div class="checkout-header-title">
+          <h3>Secure Checkout</h3>
+          <span class="security-badge">🔒 256-BIT SSL ENCRYPTED</span>
+        </div>
+        <button class="cart-close-btn" onclick="closeOrderModal()">✕</button>
+      </div>
+
+      <!-- Urgency Cart Reservation Banner -->
+      <div class="checkout-hold-banner">
+        <div class="hold-banner-text">
+          <span>⏱️</span>
+          <span>High demand! Held in cart:</span>
+        </div>
+        <div class="hold-countdown-timer" id="modalCountdown">05:00</div>
+      </div>
+
+      <!-- Item Preview -->
+      <div class="checkout-item-preview">
+        <div class="checkout-item-icon" id="modalItemIcon">🛍️</div>
+        <div class="checkout-item-meta">
+          <h4 id="modalItemTitle">SysCrafters Product</h4>
+          <p id="modalItemSubtitle">SKU-AUDIO-000001 // Qty: 1</p>
+        </div>
+        <div class="checkout-item-price" id="modalOrderAmount">$299.99</div>
+      </div>
+
+      <!-- Shipping Information -->
+      <div class="checkout-section">
+        <div class="checkout-section-header">
+          <span>Shipping Address</span>
+          <span style="color: var(--emerald); font-size: 11px;">✓ FREE EXPRESS (1-DAY)</span>
+        </div>
+        <div class="checkout-input-group">
+          <span>📍</span>
+          <input type="text" id="checkoutAddress" value="100 Market Street, San Francisco, CA 94105" readonly>
+        </div>
+      </div>
+
+      <!-- Payment Method Form -->
+      <div class="checkout-section">
+        <div class="checkout-section-header">
+          <span>Payment Details</span>
+          <div class="card-logos">
+            <span>💳 Visa</span>
+            <span>Mastercard</span>
+          </div>
+        </div>
+        <div class="checkout-input-group" style="margin-bottom: 8px;">
+          <span>💳</span>
+          <input type="text" id="checkoutCardNumber" value="4242 •••• •••• 4242" placeholder="Card Number" readonly>
+        </div>
+        <div class="checkout-grid-2">
+          <div class="checkout-input-group">
+            <span>📅</span>
+            <input type="text" id="checkoutCardExpiry" value="12 / 28" placeholder="MM/YY" readonly>
+          </div>
+          <div class="checkout-input-group">
+            <span>🔒</span>
+            <input type="text" id="checkoutCardCvc" value="••• (923)" placeholder="CVC" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Totals Breakdown -->
+      <div class="checkout-totals-box">
+        <div class="checkout-totals-row">
+          <span>Subtotal:</span>
+          <span id="modalSubtotal">$299.99</span>
+        </div>
+        <div class="checkout-totals-row">
+          <span>Express Delivery:</span>
+          <span style="color: var(--emerald); font-weight: 700;">FREE</span>
+        </div>
+        <div class="checkout-totals-row">
+          <span>Estimated Sales Tax:</span>
+          <span>$0.00</span>
+        </div>
+        <div class="checkout-totals-row final">
+          <span>Total to Pay:</span>
+          <span id="modalTotalDue" style="color: var(--emerald); font-family: var(--font-mono);">$299.99</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <button class="btn-pay-primary" id="btnPayOrder" onclick="payModalOrder('SUCCESS')">
+        <span class="btn-text">💳 Complete Payment (<span id="btnPayAmount">$299.99</span>)</span>
+        <span class="spinner" id="spinPayOrder"></span>
+      </button>
+
+      <button class="btn-checkout-cancel" onclick="closeOrderModal()">
+        Cancel and return to shopping
+      </button>
+
+      <!-- Collapsible Developer Inspector -->
+      <div class="dev-token-accordion">
+        <button class="dev-token-toggle" onclick="toggleDevTokenAccordion()">
+          <span>⚙️</span>
+          <span>Dual-Layer Concurrency Proof (Token & TTL) &darr;</span>
+        </button>
+        <div class="dev-token-content" id="devTokenContent">
+          <div><strong>Token:</strong> <code id="modalToken">res_xyz</code></div>
+          <div><strong>PostgreSQL Hold:</strong> Locked via Conditional SQL</div>
+          <div><strong>Redis Layer:</strong> Atomic Hold Key active</div>
+          <div style="margin-top: 6px;">
+            <a href="javascript:void(0)" onclick="payModalOrder('DECLINE')" style="color: var(--rose); text-decoration: underline; font-size: 11px;">
+              [Test] Simulate Card Decline (Trigger automated restock)
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Order Placed Success View -->
+    <div id="checkoutSuccessView" style="display: none;">
+      <div class="order-success-card">
+        <div class="success-icon-bubble">✓</div>
+        <h3>Order Placed Successfully!</h3>
+        <p>Thank you for your purchase. We have reserved and processed your items with zero overselling guarantee.</p>
+
+        <div class="order-id-badge" id="successOrderBadge">ORDER #ORD-2026-8921</div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+            <span style="color: var(--text-muted);">Delivery:</span>
+            <strong>Express (Arriving Tomorrow)</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+            <span style="color: var(--text-muted);">Payment:</span>
+            <span>Card ending in 4242 (Paid)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 8px;">
+            <span style="color: var(--text-muted);">Total Paid:</span>
+            <strong id="successTotalPaid" style="color: var(--emerald); font-family: var(--font-mono);">$299.99</strong>
+          </div>
+        </div>
+
+        <button class="btn-pay-primary" onclick="closeOrderModal()">
+          🛍️ Continue Shopping
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

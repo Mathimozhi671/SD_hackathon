@@ -1,0 +1,48 @@
+{
+  "name": "salestorm-flash-sale-system",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "High-Scale E-Commerce Flash Sale System (SysCrafters 2026 Hackathon)",
+  "main": "backend/src/server.ts",
+  "scripts": {
+    "dev": "tsx watch backend/src/server.ts",
+    "build": "tsc --project backend/tsconfig.json",
+    "start": "tsx backend/src/server.ts",
+    "test:concurrency": "tsx backend/tests/concurrency.test.ts",
+    "test:idempotency": "tsx backend/tests/idempotency.test.ts",
+    "test:lifecycle": "tsx backend/tests/lifecycle.test.ts",
+    "test:multi-product": "tsx backend/tests/multiProduct.test.ts",
+    "test:all": "tsx backend/tests/runAllTests.ts",
+    "simulate": "tsx backend/src/simulation/cliRunner.ts"
+  },
+  "keywords": [
+    "flash-sale",
+    "concurrency",
+    "rate-limiting",
+    "idempotency",
+    "zero-oversell",
+    "redis-lua",
+    "syscrafters-2026"
+  ],
+  "author": "SysCrafters Team",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.5.0",
+    "pg": "^8.23.1",
+    "prisma": "^8.0.0-rc.19",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.9",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.14",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

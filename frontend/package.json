@@ -1,0 +1,16 @@
+{
+  "name": "salestorm-frontend",
+  "version": "1.0.0",
+  "description": "SALESTORM Real-time Flash Sale Cockpit Frontend",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "frontend",
+    "dashboard",
+    "cockpit",
+    "websocket"
+  ],
+  "author": "SysCrafters Team",
+  "license": "MIT"
+}
